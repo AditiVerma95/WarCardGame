@@ -1,23 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI; // for UI Image
 
-// You can rename this file to DeckController.cs for clarity
 public class CardsSpawner : MonoBehaviour 
 {
-    // Drag your PARENT prefab ("CardTemplate") here in the Inspector
-    public GameObject cardPrefab;
-
-    // Drag all 52 of your card face sprites here in the Inspector
-    public Sprite[] cardSprites; 
+    public GameObject cardPrefab;     // UI prefab with an Image component
+    public Sprite[] cardSprites;      // all 52 card faces
+    public Sprite cardBackSprite;     // card back image
+    public Transform deckParent;      // parent under Canvas (e.g., an empty GameObject)
 
     private List<CardData> deck = new List<CardData>();
-    private List<GameObject> spawnedCards = new List<GameObject>();
 
     void Start()
     {
         CreateDeck();
         ShuffleDeck();
-        SpawnCards();
+        SpawnDeck();
     }
 
     void CreateDeck()
@@ -42,43 +40,18 @@ public class CardsSpawner : MonoBehaviour
         }
     }
 
-    void SpawnCards()
+    void SpawnDeck()
     {
-        float cardOffset = 0.01f;
+        float offset = -1.5f; 
 
-        for(int i = 0; i < deck.Count; i++)
+        for (int i = 0; i < deck.Count; i++)
         {
-            Vector3 spawnPosition = transform.position + new Vector3(0, i * cardOffset, 0);
-            GameObject newCard = Instantiate(cardPrefab, spawnPosition, Quaternion.identity);
+            GameObject newCard = Instantiate(cardPrefab, deckParent);
+            newCard.GetComponentInChildren<Image>().sprite = cardBackSprite; // show back first
 
-            // --- THIS IS THE IMPORTANT CHANGE ---
-            // We get the SpriteRenderer from the child object.
-            SpriteRenderer cardRenderer = newCard.GetComponentInChildren<SpriteRenderer>();
-
-            // Find the correct sprite and assign it
-            Sprite cardSprite = FindCardSprite(deck[i].suit, deck[i].rank);
-            if (cardRenderer != null && cardSprite != null)
-            {
-                cardRenderer.sprite = cardSprite;
-            }
-            
-            spawnedCards.Add(newCard);
+            // Stack with small offset
+            RectTransform rt = newCard.GetComponent<RectTransform>();
+            rt.anchoredPosition = new Vector2( i * offset, 0);
         }
-    }
-
-    Sprite FindCardSprite(CardData.Suit suit, CardData.Rank rank)
-    {
-        // This logic assumes you ordered your sprites in the Inspector:
-        // All Clubs (A-K), then Diamonds (A-K), then Hearts (A-K), then Spades (A-K)
-        int suitIndex = (int)suit;
-        int rankIndex = (int)rank - 1;
-        int spriteIndex = (suitIndex * 13) + rankIndex;
-        
-        // Safety check
-        if (spriteIndex >= 0 && spriteIndex < cardSprites.Length)
-        {
-            return cardSprites[spriteIndex];
-        }
-        return null; // Return null if sprite not found
     }
 }
