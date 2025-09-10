@@ -18,31 +18,32 @@ public class CardSpawner : MonoBehaviour
         float xPos = 0f;
         float xOffset = 1.5f;
 
-        int rankIndex = 0;
-        int suitIndex = 0;
         Rank[] ranks = (Rank[])Enum.GetValues(typeof(Rank));
         Suit[] suits = (Suit[])Enum.GetValues(typeof(Suit));
 
+        // There are 13 ranks and 4 suits
+        int numRanks = ranks.Length;
+        int numSuits = suits.Length;
 
-        for (int i = 0; i < 52; i++)
+        for (int i = 0; i < numRanks * numSuits; i++)
         {
             GameObject cardObject = Instantiate(cardPrefab, cardHolder.transform);
 
             RectTransform cardRect = cardObject.GetComponent<RectTransform>();
-            cardRect.anchoredPosition = new Vector3(xPos + xOffset, 0f, 0f);
+            cardRect.anchoredPosition = new Vector2(xPos, 0f); // Use Vector2 for RectTransform
             xPos += xOffset;
 
             CardData cardData = cardObject.GetComponent<CardData>();
-            cardData.rank = ranks[rankIndex];
-            cardData.suit = suits[suitIndex];
-            if (rankIndex == 13)
-            {
-                suitIndex++;
-                rankIndex = 0;
-            }
 
+            // Correctly assign suit and rank
+            cardData.rank = ranks[i % numRanks]; // Loops through 0-12
+            cardData.suit = suits[i / numRanks]; // Changes after every 13 cards
+
+            // Add the newly created card to the global list
+            CardsManager.Instance.globalCards.Add(cardData);
         }
     }
+
 
     // void ShuffleDeck()
     // {

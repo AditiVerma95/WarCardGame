@@ -4,11 +4,20 @@ using UnityEngine;
 public class CardsManager : MonoBehaviour
 {
     public static CardsManager Instance;
+    public List<CardData> globalCards = new List<CardData>();
     private void Awake()
     {
-        Instance = this;
+
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
     }
 
-    public List<CardData> globalCards = new();
+    
     
 }
