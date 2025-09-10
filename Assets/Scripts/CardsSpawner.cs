@@ -1,21 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // for UI Image
 
-public class CardsSpawner : MonoBehaviour 
+public class CardSpawner : MonoBehaviour
 {
-    public GameObject cardPrefab;     // UI prefab with an Image component
-    public Sprite[] cardSprites;      // all 52 card faces
-    public Sprite cardBackSprite;     // card back image
-    public Transform deckParent;      // parent under Canvas (e.g., an empty GameObject)
+    public GameObject cardPrefab;
+    public Sprite[] cardSprites;
 
     private List<CardData> deck = new List<CardData>();
 
-    void Start()
+    public List<CardData> Deck => deck;
+
+    void Awake()
     {
         CreateDeck();
         ShuffleDeck();
-        SpawnDeck();
     }
 
     void CreateDeck()
@@ -40,18 +38,11 @@ public class CardsSpawner : MonoBehaviour
         }
     }
 
-    void SpawnDeck()
+    public Sprite GetCardSprite(CardData card)
     {
-        float offset = -1.5f; 
-
-        for (int i = 0; i < deck.Count; i++)
-        {
-            GameObject newCard = Instantiate(cardPrefab, deckParent);
-            newCard.GetComponentInChildren<Image>().sprite = cardBackSprite; // show back first
-
-            // Stack with small offset
-            RectTransform rt = newCard.GetComponent<RectTransform>();
-            rt.anchoredPosition = new Vector2( i * offset, 0);
-        }
+        int suitIndex = (int)card.suit;
+        int rankIndex = (int)card.rank - 1;
+        int spriteIndex = (suitIndex * 13) + rankIndex;
+        return cardSprites[spriteIndex];
     }
 }
