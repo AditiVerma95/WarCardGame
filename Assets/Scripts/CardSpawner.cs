@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class CardSpawner : MonoBehaviour
 {
     public static CardSpawner Instance;
     [SerializeField] private GameObject cardPrefab;
     [SerializeField] private GameObject cardHolder;
-
+    public List<CardData> globalCards = new List<CardData>();
     private List<CardData> deck = new List<CardData>(); // Local deck reference
 
     void Awake()
@@ -20,7 +21,7 @@ public class CardSpawner : MonoBehaviour
     void CreateDeck()
     {
         float xPos = 0f;
-        float xOffset = 1.5f;
+        float xOffset = 1f;
 
         Rank[] ranks = (Rank[])Enum.GetValues(typeof(Rank));
         Suit[] suits = (Suit[])Enum.GetValues(typeof(Suit));
@@ -45,7 +46,7 @@ public class CardSpawner : MonoBehaviour
 
             // Add card to local deck + global deck
             deck.Add(cardData);
-            CardsManager.Instance.globalCards.Add(cardData);
+            globalCards.Add(cardData);
         }
     }
 

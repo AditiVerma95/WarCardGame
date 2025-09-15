@@ -1,157 +1,71 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using DG.Tweening;
 
 public class DealManager : MonoBehaviour
 {
     [Header("References")]
-    public CardSpawner cardSpawner;
-    public Button dealButton;
-    public Button playRoundButton;
+    [SerializeField] private Transform deckPosition;
+    [SerializeField] private Transform playerArea1;
+    [SerializeField] private Transform playerArea2;
+    [SerializeField] private Transform playerArea3;
+    [SerializeField] private Transform playerArea4;
 
-    [Header("Player Areas (empty GameObjects)")]
-    public Transform[] playerAreas; // must be size 4
-    public Transform battleArea;
+    [Header("Settings")]
+    [SerializeField] private float slideDuration = 0.6f;
+    [SerializeField] private float spreadOffset = 0.3f; // spacing between cards
 
-    private List<Player> players = new List<Player>();
-    private List<CardData> roundCards = new List<CardData>();
-    private bool isRoundInProgress = false;
+    private Queue<CardData> player1Cards = new Queue<CardData>();
+    private Queue<CardData> player2Cards = new Queue<CardData>();
+    private Queue<CardData> player3Cards = new Queue<CardData>();
+    private Queue<CardData> player4Cards = new Queue<CardData>();
 
-    void Start()
+    private List<CardData> deck;
+
+    public void StartDealing()
     {
-        // ✅ Null-safety checks
-        if (playerAreas == null || playerAreas.Length < 4)
+        deck = CardSpawner.Instance.GetDeck();
+
+        if (deck == null || deck.Count != 52)
         {
-            Debug.LogError("⚠️ DealManager: Please assign 4 Player Areas in the Inspector!");
-            return;
-        }
-        if (cardSpawner == null)
-        {
-            Debug.LogError("⚠️ DealManager: CardSpawner is not assigned!");
-            return;
-        }
-        if (dealButton == null || playRoundButton == null)
-        {
-            Debug.LogError("⚠️ DealManager: Buttons not assigned!");
-            return;
-        }
-        if (battleArea == null)
-        {
-            Debug.LogError("⚠️ DealManager: BattleArea is missing!");
+            Debug.LogError("Deck is not ready or does not have 52 cards!");
             return;
         }
 
-        // Create players
-        players.Add(new Player("You", PlayerType.Human, playerAreas[0]));
-        players.Add(new Player("AI 1", PlayerType.AI, playerAreas[1]));
-        players.Add(new Player("AI 2", PlayerType.AI, playerAreas[2]));
-        players.Add(new Player("AI 3", PlayerType.AI, playerAreas[3]));
-
-        dealButton.onClick.AddListener(DealCards);
-        playRoundButton.onClick.AddListener(PlayRound);
+        DealCardsAllAtOnce();
     }
 
-    void DealCards()
+    private void DealCardsAllAtOnce()
     {
-        List<CardData> deck = cardSpawner.GetDeck();
-        if (deck == null || deck.Count == 0)
+        Transform[] playerAreas = { playerArea1, playerArea2, playerArea3, playerArea4 };
+        Queue<CardData>[] playerQueues = { player1Cards, player2Cards, player3Cards, player4Cards };
+
+        int cardIndex = 0;
+
+        for (int player = 0; player < playerAreas.Length; player++)
         {
-            Debug.LogWarning("⚠️ DealManager: No deck available to deal.");
-            return;
-        }
-
-        foreach (var p in players)
-            p.hand.Clear();
-
-        int playerIndex = 0;
-        foreach (CardData card in deck)
-        {
-            players[playerIndex].hand.Enqueue(card);
-            card.transform.SetParent(playerAreas[playerIndex]);
-
-            // neatly space cards out
-            int cardCount = players[playerIndex].hand.Count;
-            float spacing = 30f;
-            card.transform.localPosition = new Vector3((cardCount - 1) * spacing, 0, 0);
-
-            // show card back until played
-            card.ShowBack();
-
-            playerIndex = (playerIndex + 1) % players.Count;
-        }
-
-        Debug.Log("✅ Cards dealt!");
-    }
-
-    public void PlayRound()
-    {
-        if (isRoundInProgress) return;
-        StartCoroutine(RoundCoroutine());
-    }
-
-    IEnumerator RoundCoroutine()
-    {
-        isRoundInProgress = true;
-        roundCards.Clear();
-
-        // Human plays first
-        PlayTurn(0);
-        yield return new WaitForSeconds(1f);
-
-        // AI players
-        for (int i = 1; i < players.Count; i++)
-        {
-            PlayTurn(i);
-            yield return new WaitForSeconds(1f);
-        }
-
-        // Evaluate winner
-        yield return new WaitForSeconds(1f);
-        int winnerIndex = GetRoundWinner();
-        Debug.Log(players[winnerIndex].playerName + " wins the round!");
-
-        // Winner collects cards
-        players[winnerIndex].CollectCards(roundCards);
-        roundCards.Clear();
-
-        isRoundInProgress = false;
-    }
-
-    void PlayTurn(int playerIndex)
-    {
-        Player p = players[playerIndex];
-        CardData card = p.PlayCard();
-        if (card == null) return;
-
-        roundCards.Add(card);
-
-        // Animate into battle area
-        Vector3 offset = new Vector3(playerIndex * 1.5f, 0, 0);
-        card.transform.SetParent(battleArea);
-        card.transform.DOMove(battleArea.position + offset, 0.5f);
-
-        // Reveal human card
-        if (p.type == PlayerType.Human)
-            card.ShowFront();
-    }
-
-    int GetRoundWinner()
-    {
-        int winnerIndex = 0;
-        int highestRank = -1;
-
-        for (int i = 0; i < roundCards.Count; i++)
-        {
-            int rankValue = (int)roundCards[i].rank;
-            if (rankValue > highestRank)
+            for (int i = 0; i < 13; i++)
             {
-                highestRank = rankValue;
-                winnerIndex = i;
+                CardData cardData = deck[cardIndex];
+                cardIndex++;
+
+                // Reset card to deck position
+                cardData.transform.position = deckPosition.position;
+
+                // Calculate offset so cards spread instead of overlap
+                Vector3 targetPos = playerAreas[player].position + new Vector3(i * spreadOffset, 0f, 0f);
+
+                // Animate card
+                cardData.transform.DOMove(targetPos, slideDuration)
+                    .SetEase(Ease.OutQuad);
+
+                // Add to player queue
+                playerQueues[player].Enqueue(cardData);
             }
         }
-
-        return winnerIndex;
+    }
+    void AiPlayers()
+    {
+        
     }
 }

@@ -23,7 +23,7 @@ public class Player
         if (hand.Count == 0) return null;
 
         CardData card = hand.Dequeue();
-        card.ShowFront(); // flip to face when played
+        card.ShowFront();
         return card;
     }
 
