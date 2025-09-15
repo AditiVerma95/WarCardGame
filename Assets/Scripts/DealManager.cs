@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using System.Linq;
 
 public class DealManager : MonoBehaviour
 {
@@ -15,10 +16,16 @@ public class DealManager : MonoBehaviour
     [SerializeField] private float slideDuration = 0.6f;
     [SerializeField] private float spreadOffset = 0.3f; // spacing between cards
 
-    private Queue<CardData> player1Cards = new Queue<CardData>();
-    private Queue<CardData> player2Cards = new Queue<CardData>();
-    private Queue<CardData> player3Cards = new Queue<CardData>();
-    private Queue<CardData> player4Cards = new Queue<CardData>();
+    public Queue<CardData> player1Cards = new Queue<CardData>();
+    public Queue<CardData> player2Cards = new Queue<CardData>();
+    public Queue<CardData> player3Cards = new Queue<CardData>();
+    public Queue<CardData> player4Cards = new Queue<CardData>();
+
+    [Header("Debug Queues (Inspector Only)")]
+    [SerializeField] private List<CardData> debugPlayer1Cards = new List<CardData>();
+    [SerializeField] private List<CardData> debugPlayer2Cards = new List<CardData>();
+    [SerializeField] private List<CardData> debugPlayer3Cards = new List<CardData>();
+    [SerializeField] private List<CardData> debugPlayer4Cards = new List<CardData>();
 
     private List<CardData> deck;
 
@@ -61,11 +68,19 @@ public class DealManager : MonoBehaviour
 
                 // Add to player queue
                 playerQueues[player].Enqueue(cardData);
+
             }
+            SyncDebugQueues();
         }
     }
-    void AiPlayers()
+    private void SyncDebugQueues()
     {
-        
+        debugPlayer1Cards = new List<CardData>(player1Cards);
+        debugPlayer2Cards = new List<CardData>(player2Cards);
+        debugPlayer3Cards = new List<CardData>(player3Cards);
+        debugPlayer4Cards = new List<CardData>(player4Cards);
     }
+
+
+
 }

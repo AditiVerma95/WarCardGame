@@ -49,8 +49,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a48c49e72a3f5354eaf1d1de57a60c63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  suit: 0
   rank: 0
+  suit: 0
+  faceSprite: {fileID: 21300000, guid: 350b8df3474ca10479a1fa3263a4033c, type: 3}
+  backSprite: {fileID: 21300000, guid: 14127f26d5f8b3f4482c0407bf17958d, type: 3}
 --- !u!1 &4775188800701264443
 GameObject:
   m_ObjectHideFlags: 0
