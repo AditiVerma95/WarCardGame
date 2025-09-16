@@ -5,6 +5,8 @@ using System.Linq;
 
 public class DealManager : MonoBehaviour
 {
+    public GameObject dealButton;
+    public static DealManager Instance;
     [Header("References")]
     [SerializeField] private Transform deckPosition;
     [SerializeField] private Transform playerArea1;
@@ -28,6 +30,11 @@ public class DealManager : MonoBehaviour
     [SerializeField] private List<CardData> debugPlayer4Cards = new List<CardData>();
 
     private List<CardData> deck;
+    
+    public void Awake()
+    {
+        Instance = this;
+    }
 
     public void StartDealing()
     {
@@ -40,6 +47,7 @@ public class DealManager : MonoBehaviour
         }
 
         DealCardsAllAtOnce();
+        dealButton.SetActive(false);
     }
 
     private void DealCardsAllAtOnce()

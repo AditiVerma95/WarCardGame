@@ -1,29 +1,32 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class CardData : MonoBehaviour
 {
+    [Header("Card Info")]
     public Rank rank;
     public Suit suit;
+
+    [Header("Card Sprites")]
     public Sprite faceSprite;
     public Sprite backSprite;
 
-    private Image image;
+    private SpriteRenderer spriteRenderer;
 
     void Awake()
     {
-        image = GetComponent<Image>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        ShowBack(); // by default, card starts face-down
     }
 
     public void ShowFront()
     {
-        if (image != null)
-            image.sprite = faceSprite;
+        if (spriteRenderer != null)
+            spriteRenderer.sprite = faceSprite;
     }
 
     public void ShowBack()
     {
-        if (image != null)
-            image.sprite = backSprite;
+        if (spriteRenderer != null)
+            spriteRenderer.sprite = backSprite;
     }
 }
