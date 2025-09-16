@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
-using System.Linq;
 
 public class DealManager : MonoBehaviour
 {
     public GameObject dealButton;
-    public static DealManager Instance;
     [Header("References")]
     [SerializeField] private Transform deckPosition;
     [SerializeField] private Transform playerArea1;
@@ -23,18 +21,7 @@ public class DealManager : MonoBehaviour
     public Queue<CardData> player3Cards = new Queue<CardData>();
     public Queue<CardData> player4Cards = new Queue<CardData>();
 
-    [Header("Debug Queues (Inspector Only)")]
-    [SerializeField] private List<CardData> debugPlayer1Cards = new List<CardData>();
-    [SerializeField] private List<CardData> debugPlayer2Cards = new List<CardData>();
-    [SerializeField] private List<CardData> debugPlayer3Cards = new List<CardData>();
-    [SerializeField] private List<CardData> debugPlayer4Cards = new List<CardData>();
-
     private List<CardData> deck;
-    
-    public void Awake()
-    {
-        Instance = this;
-    }
 
     public void StartDealing()
     {
@@ -48,6 +35,7 @@ public class DealManager : MonoBehaviour
 
         DealCardsAllAtOnce();
         dealButton.SetActive(false);
+        
     }
 
     private void DealCardsAllAtOnce()
@@ -76,19 +64,8 @@ public class DealManager : MonoBehaviour
 
                 // Add to player queue
                 playerQueues[player].Enqueue(cardData);
-
             }
-            SyncDebugQueues();
         }
     }
-    private void SyncDebugQueues()
-    {
-        debugPlayer1Cards = new List<CardData>(player1Cards);
-        debugPlayer2Cards = new List<CardData>(player2Cards);
-        debugPlayer3Cards = new List<CardData>(player3Cards);
-        debugPlayer4Cards = new List<CardData>(player4Cards);
-    }
-
-
-
+    
 }
