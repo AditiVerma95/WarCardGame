@@ -9,14 +9,17 @@ public class PlayManager : MonoBehaviour
     [SerializeField] private DealManager dealManager;
 
     [Tooltip("Slots inside the 2x2 grid (assign in Inspector)")]
-    [SerializeField] private Transform[] boardSlots = new Transform[4];
+    [SerializeField] public Transform[] boardSlots = new Transform[4];
+
+    [Tooltip("Each player’s win pile position (assign in Inspector)")]
+    [SerializeField] public Transform[] winPiles = new Transform[4];
 
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.5f;
     [SerializeField] private float flipDuration = 0.25f;
 
     [SerializeField, Range(0.1f, 1f)]
-    private float slotSpacingFactor = 0.5f; // 1 = full distance, 0.5 = half distance, etc.
+    private float slotSpacingFactor = 0.5f;
 
     void Start()
     {
@@ -24,59 +27,22 @@ public class PlayManager : MonoBehaviour
         {
             RectTransform rt = boardSlots[i].GetComponent<RectTransform>();
             Vector2 offset = GetDistanceFromCanvasCenter(rt);
-
-            // Scale the offset closer to center
             Vector2 newOffset = offset * slotSpacingFactor;
-
-            // Apply new position
             rt.localPosition = newOffset;
-
-            Debug.Log($"Slot {i} moved closer: {newOffset}");
         }
-    }
-
-
-
-    public void PlayRound()
-    {
-        StartCoroutine(PlaySequence());
     }
 
     Vector2 GetDistanceFromCanvasCenter(RectTransform target)
     {
         Canvas canvas = target.GetComponentInParent<Canvas>();
-        if (canvas == null)
-        {
-            Debug.LogError("Target is not inside a Canvas!");
-            return Vector2.zero;
-        }
+        if (canvas == null) return Vector2.zero;
 
         RectTransform canvasRect = canvas.GetComponent<RectTransform>();
-
-        // World → local (canvas space)
         Vector3 localPos = canvasRect.InverseTransformPoint(target.position);
-
-        // (x,y) offset from center
         return new Vector2(localPos.x, localPos.y);
     }
 
-
-    private IEnumerator PlaySequence()
-    {
-        // Player 1 -> slot 0
-        yield return PlayCardFromQueue(dealManager.player1Cards, boardSlots[0]);
-
-        // Player 2 -> slot 1
-        yield return PlayCardFromQueue(dealManager.player2Cards, boardSlots[1]);
-
-        // Player 3 -> slot 2
-        yield return PlayCardFromQueue(dealManager.player3Cards, boardSlots[2]);
-
-        // Player 4 -> slot 3
-        yield return PlayCardFromQueue(dealManager.player4Cards, boardSlots[3]);
-    }
-
-    private IEnumerator PlayCardFromQueue(Queue<CardData> queue, Transform slot)
+    public IEnumerator PlayCardFromQueue(Queue<CardData> queue, Transform slot)
     {
         if (queue.Count == 0) yield break;
 
@@ -86,24 +52,84 @@ public class PlayManager : MonoBehaviour
 
         Sequence seq = DOTween.Sequence();
 
-        // Move card to slot
+        // Smooth move into the slot’s position (world space is fine here)
         seq.Append(rt.DOMove(slot.position, moveDuration).SetEase(Ease.OutCubic));
 
-        // Flip: rotate Y 0→90, swap sprite, then 90→0
+        // Flip animation
         seq.Append(rt.DORotate(new Vector3(0, 90, 0), flipDuration))
-           .AppendCallback(() => data.ShowFront()) // swap to face sprite
+           .AppendCallback(() => data.ShowFront())
            .Append(rt.DORotate(Vector3.zero, flipDuration));
 
         bool finished = false;
         seq.OnComplete(() =>
         {
-            //rt.SetParent(slot, false); // snap into grid after anim
-            rt.rotation = Quaternion.identity; // reset rotation to 0,0,0
+            rt.SetParent(slot, true); // keep its world-space offset
+            rt.rotation = Quaternion.identity;
             finished = true;
         });
 
         yield return new WaitUntil(() => finished);
-        yield return new WaitForSeconds(0.2f);
+    }
+
+
+
+
+    // === Face-down play (burn cards in WAR) ===
+    public IEnumerator PlayCardFaceDown(CardData data, Transform slot)
+    {
+        GameObject cardGO = data.gameObject;
+        RectTransform rt = cardGO.GetComponent<RectTransform>();
+
+        data.ShowBack();
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(rt.DOMove(slot.position, moveDuration).SetEase(Ease.OutCubic));
+
+        bool finished = false;
+        seq.OnComplete(() =>
+        {
+            rt.SetParent(slot, false);
+            rt.rotation = Quaternion.identity;
+            finished = true;
+        });
+
+        yield return new WaitUntil(() => finished);
+    }
+
+    // === Send won cards into winner’s pile visually ===
+    public IEnumerator MoveToWinPile(CardData card, Transform winPile)
+    {
+        RectTransform rt = card.GetComponent<RectTransform>();
+        RectTransform winRT = winPile.GetComponent<RectTransform>();
+
+        Canvas canvas = rt.GetComponentInParent<Canvas>();
+        RectTransform canvasRect = canvas.GetComponent<RectTransform>();
+
+        // Convert both card + winPile to canvas-local space
+        Vector3 cardLocal = canvasRect.InverseTransformPoint(rt.position);
+        Vector3 winLocal = canvasRect.InverseTransformPoint(winRT.position);
+
+        Sequence seq = DOTween.Sequence();
+        // Animate from cardLocal to winLocal (canvas-relative)
+        seq.Append(DOTween.To(
+            () => cardLocal,
+            x =>
+            {
+                rt.position = canvasRect.TransformPoint(x);
+            },
+            winLocal,
+            moveDuration
+        ).SetEase(Ease.InOutCubic));
+
+        bool finished = false;
+        seq.OnComplete(() =>
+        {
+            rt.SetParent(winPile, false);
+            rt.localPosition = Vector3.zero; // snap cleanly inside pile
+            finished = true;
+        });
+
+        yield return new WaitUntil(() => finished);
     }
 
 }
